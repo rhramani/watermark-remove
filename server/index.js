@@ -64,13 +64,16 @@ async function removeWatermarkHF(imagePath) {
     console.log('🚀 Sending to Hugging Face AI (Instruct-Pix2Pix)...');
     const imageData = fs.readFileSync(imagePath);
     
-    const response = await hf.imageToImage({
-      model: "timbrooks/instruct-pix2pix",
-      inputs: imageData,
-      parameters: {
-        prompt: "remove the watermark text and logo, high quality",
-      }
-    });
+    const response = await Promise.race([
+      hf.imageToImage({
+        model: "timbrooks/instruct-pix2pix",
+        inputs: imageData,
+        parameters: {
+          prompt: "remove the watermark text and logo, high quality",
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('AI Timeout')), 12000))
+    ]);
 
     if (response) {
       console.log('✅ Received AI response');
@@ -347,19 +350,24 @@ app.post('/api/remove-watermark', upload.single('image'), async (req, res) => {
     // 1. Try Hugging Face Inference API first
     let processedBuffer = await removeWatermarkHF(req.file.path);
 
-    // 2. Try Gradio Space as backup (often higher quality)
-    if (!processedBuffer) {
-      console.log('🔄 HF API failed. Trying Gradio Space fallback...');
-      processedBuffer = await removeWatermarkGradio(req.file.path);
-    }
+    // 2. AI Backup skipped for speed (Gradio is too slow)
+    // If you need it, you can re-enable removeWatermarkGradio here.
 
     if (processedBuffer) {
-      fs.writeFileSync(outputPath, processedBuffer);
-      console.log('✅ AI Removal Successful');
+      // Quality Optimization: Restore original dimensions and sharpen
+      const originalMetadata = await sharp(req.file.path).metadata();
+      
+      await sharp(processedBuffer)
+        .resize(originalMetadata.width, originalMetadata.height, { fit: 'fill' })
+        .sharpen({ sigma: 1, m1: 0.5, m2: 0.5 }) // Subtle sharpening
+        .png({ quality: 100 })
+        .toFile(outputPath);
+
+      console.log('✅ AI Removal Successful & Quality Optimized');
       return res.json({
         message: 'Watermark removed successfully via AI',
         filename: filename,
-        url: `http://localhost:5000/processed/${filename}`
+        url: `/processed/${filename}`
       });
     }
 
@@ -368,8 +376,16 @@ app.post('/api/remove-watermark', upload.single('image'), async (req, res) => {
     const scriptPath = path.join(__dirname, 'remove_watermark.py');
 
     try {
+      let pyCmd = 'python3';
+      try {
+        await execPromise('python3 --version');
+      } catch {
+        pyCmd = 'python';
+      }
+
+      console.log(`🐍 Executing: ${pyCmd} "${scriptPath}"...`);
       const { stdout, stderr } = await execPromise(
-        `python "${scriptPath}" "${req.file.path}" "${outputPath}"`
+        `${pyCmd} "${scriptPath}" "${req.file.path}" "${outputPath}"`
       );
       
       if (!fs.existsSync(outputPath)) {
@@ -379,7 +395,7 @@ app.post('/api/remove-watermark', upload.single('image'), async (req, res) => {
       return res.json({
         message: 'Watermark removed successfully via Local Engine',
         filename: filename,
-        url: `http://localhost:5000/processed/${filename}`
+        url: `/processed/${filename}`
       });
     } catch (pyErr) {
       console.error('❌ Python Inpainting failed:', pyErr.message);

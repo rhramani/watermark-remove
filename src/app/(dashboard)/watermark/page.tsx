@@ -27,7 +27,8 @@ export default function WatermarkPage() {
         formData.append('logo', settings.logoFile);
       }
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, formData, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -49,12 +50,14 @@ export default function WatermarkPage() {
     
     if (processedFiles.length === 1) {
       // Direct download for single image using the force-download endpoint
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const filename = processedFiles[0];
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/download/${filename}`;
+      window.location.href = `${apiUrl}/api/download/${filename}`;
     } else {
       // ZIP download for multiple images
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const filenames = JSON.stringify(processedFiles);
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/download-bulk?filenames=${filenames}`;
+      window.location.href = `${apiUrl}/api/download-bulk?filenames=${filenames}`;
     }
   };
 
@@ -106,6 +109,7 @@ export default function WatermarkPage() {
                 
                 <div className="flex items-center gap-4">
                   <button 
+                    type="button"
                     onClick={() => {
                       clearImages('watermark');
                       setProcessedFiles([]);
@@ -117,6 +121,7 @@ export default function WatermarkPage() {
                   
                   {processedFiles.length > 0 ? (
                     <button 
+                      type="button"
                       onClick={handleDownload}
                       className="flex items-center gap-2 px-8 py-3 bg-accent hover:bg-accent-hover text-white rounded-xl font-bold transition-all shadow-xl shadow-accent/30 animate-in zoom-in duration-300"
                     >
@@ -125,6 +130,7 @@ export default function WatermarkPage() {
                     </button>
                   ) : (
                     <button 
+                      type="button"
                       onClick={handleProcess}
                       disabled={loading}
                       className="flex items-center gap-2 px-8 py-3 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white rounded-xl font-bold transition-all shadow-xl shadow-primary/30"

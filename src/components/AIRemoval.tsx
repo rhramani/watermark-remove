@@ -22,16 +22,22 @@ export const AIRemoval = () => {
     setIsProcessing(true);
     setIsDone(false);
     
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    
     try {
       const formData = new FormData();
       formData.append('image', removalImages[0].file);
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/remove-watermark`, formData, {
+      const response = await axios.post(`${apiUrl}/api/remove-watermark`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       if (response.data.url) {
-        setResultUrl(response.data.url);
+        // Ensure the URL points to the backend
+        const fullUrl = response.data.url.startsWith('http') 
+          ? response.data.url 
+          : `${apiUrl}${response.data.url}`;
+        setResultUrl(fullUrl);
         setIsDone(true);
       }
     } catch (error: any) {
@@ -53,8 +59,9 @@ export const AIRemoval = () => {
 
   const handleDownload = () => {
     if (!resultUrl) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     const filename = resultUrl.split('/').pop();
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/download/${filename}`;
+    window.location.href = `${apiUrl}/api/download/${filename}`;
   };
 
   const handleReset = () => {
@@ -148,12 +155,14 @@ export const AIRemoval = () => {
             {isDone ? (
               <>
                 <button 
+                  type="button"
                   onClick={handleReset}
                   className="px-8 py-4 rounded-2xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-all border border-slate-700"
                 >
                   Try Another
                 </button>
                 <button 
+                  type="button"
                   onClick={handleDownload}
                   className="px-8 py-4 rounded-2xl font-black text-lg bg-green-500 hover:bg-green-600 text-white shadow-2xl shadow-green-500/20 transition-all scale-105 hover:scale-110 active:scale-95 flex items-center justify-center gap-2"
                 >
@@ -162,6 +171,7 @@ export const AIRemoval = () => {
               </>
             ) : (
               <button 
+                type="button"
                 onClick={handleRemove}
                 disabled={isProcessing}
                 className={cn(

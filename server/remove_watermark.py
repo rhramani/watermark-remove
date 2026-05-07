@@ -98,11 +98,11 @@ def remove_watermark(input_path, output_path):
     # ─────────────────────────────────────────────────────────────────
     # STEP 4 – SMART DILATION & INPAINTING
     # ─────────────────────────────────────────────────────────────────
-    # Dilate more to cover anti-aliasing edges and glow of white text
-    dilated_mask = cv2.dilate(final_removal_mask, np.ones((7, 7), np.uint8), iterations=2)
+    # Reduced dilation to prevent smudging (3x3 instead of 7x7)
+    dilated_mask = cv2.dilate(final_removal_mask, np.ones((3, 3), np.uint8), iterations=1)
     
-    # Use Telea for robust structural restoration
-    result = cv2.inpaint(img, dilated_mask, 5, cv2.INPAINT_TELEA)
+    # Use smaller inpaint radius for sharper details
+    result = cv2.inpaint(img, dilated_mask, 3, cv2.INPAINT_TELEA)
     
     cv2.imwrite(output_path, result)
     

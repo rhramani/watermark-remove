@@ -57,7 +57,7 @@ export const UploadArea = ({ type = 'watermark' }: { type?: 'watermark' | 'remov
             </p>
           </div>
           
-          <button className="mt-4 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl font-semibold transition-all">
+          <button type="button" className="mt-4 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl font-semibold transition-all">
             Browse Files
           </button>
         </div>
