@@ -26,7 +26,7 @@ export const AIRemoval = () => {
       const formData = new FormData();
       formData.append('image', removalImages[0].file);
 
-      const response = await axios.post('http://localhost:5000/api/remove-watermark', formData, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/remove-watermark`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -54,7 +54,7 @@ export const AIRemoval = () => {
   const handleDownload = () => {
     if (!resultUrl) return;
     const filename = resultUrl.split('/').pop();
-    window.location.href = `http://localhost:5000/api/download/${filename}`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/download/${filename}`;
   };
 
   const handleReset = () => {

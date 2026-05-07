@@ -27,7 +27,7 @@ export default function WatermarkPage() {
         formData.append('logo', settings.logoFile);
       }
 
-      const response = await axios.post('http://localhost:5000/api/upload', formData, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -50,11 +50,11 @@ export default function WatermarkPage() {
     if (processedFiles.length === 1) {
       // Direct download for single image using the force-download endpoint
       const filename = processedFiles[0];
-      window.location.href = `http://localhost:5000/api/download/${filename}`;
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/download/${filename}`;
     } else {
       // ZIP download for multiple images
       const filenames = JSON.stringify(processedFiles);
-      window.location.href = `http://localhost:5000/api/download-bulk?filenames=${filenames}`;
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/download-bulk?filenames=${filenames}`;
     }
   };
 
